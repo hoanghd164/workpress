@@ -4,7 +4,7 @@ mysql_folder_share='/mnt/nfsdata/website/mysql'
 wp_folder_share='/mnt/nfs/website/www'
 folder_mount='/home/data/'
 folder_name='/root/wp'
-namespace='wp_hadanghoang'
+namespace='wordpress'
 wp_domain='wordpress.hoanghd.fun'
 
 nfs_server(){
