@@ -4,7 +4,8 @@ mysql_folder_share='/mnt/nfsdata/website/mysql'
 wp_folder_share='/mnt/nfs/website/www'
 folder_mount='/home/data/'
 folder_name='/root/wp'
-namespace='wp'
+namespace='wp_hadanghoang'
+wp_domain='wordpress.hoanghd.fun'
 
 nfs_server(){
 apt install nfs-common nfs-kernel-server rpcbind -y 
@@ -32,6 +33,7 @@ systemctl status nfs-server && systemctl restart nfs-server
 # umount $folder_mountmkdir -p $folder_name
 }
 
+mkdir -p $folder_name  $mysql_folder_share $wp_folder_share $folder_mount
 cat > $folder_name/mysql-deployment.yaml << OEF
 apiVersion: apps/v1
 kind: Deployment
@@ -120,10 +122,8 @@ spec:
   mountOptions:
     - hard
     - nfsvers=4.1
-  # nfs:
-  #   server: $nfs_server_ipaddr
-  #   path: "$mysql_folder_share"
-  hostPath:
+  nfs:
+    server: $nfs_server_ipaddr
     path: "$mysql_folder_share"
 ---
 kind: PersistentVolumeClaim
@@ -172,7 +172,7 @@ spec:
         env:
         - name: WORDPRESS_DB_HOST
           value: website-mysql
-        - name: WORDPRESS_DB_NAMEƒ√
+        - name: WORDPRESS_DB_NAME
           valueFrom:
             secretKeyRef:
               name: mysql
@@ -309,10 +309,10 @@ metadata:
 spec:
 #   tls:
 #   - hosts:
-#     - website.com
-#     secretName: ssl-website.com
+#     - $wp_domain
+#     secretName: ssl-$wp_domain
   rules:
-  - host: website.com
+  - host: $wp_domain
     http:
       paths:
         - path: /
@@ -384,20 +384,18 @@ metadata:
 spec:
   storageClassName: website-wp
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 1Gi
 OEF
 
-# kubectl delete namespace $namespace #kubectl get ns $namespace
-# kubectl create namespace $namespace #kubectl get ns $namespace
-# kubectl apply -f $folder_name/secrets.yaml #kubectl get secret -n $namespace
-# kubectl apply -f $folder_name/mysql-volume.yaml #kubectl get pv -o wide && kubectl describe pv/website-mysql-pv && kubectl get pvc,pv -o wide
-# kubectl apply -f $folder_name/wordpress-volume.yaml #kubectl get pv -o wide && kubectl describe pv/website-wp-pv && kubectl get pvc,pv -o wide
-# kubectl apply -f $folder_name/mysql-deployment.yaml
-# kubectl delete -f $folder_name/mysql-deployment.yaml
-# kubectl apply -f $folder_name/wordpress-deployment.yaml
-# kubectl apply -f $folder_name/mysql-service.yaml
-# kubectl apply -f $folder_name/wordpress-service.yaml
-# kubectl apply -f $folder_name/ingress.yaml
+kubectl create namespace $namespace
+kubectl apply -f $folder_name/secrets.yaml 
+kubectl apply -f $folder_name/mysql-volume.yaml
+kubectl apply -f $folder_name/wordpress-volume.yaml
+kubectl apply -f $folder_name/mysql-deployment.yaml
+kubectl apply -f $folder_name/mysql-service.yaml
+kubectl apply -f $folder_name/wordpress-deployment.yaml
+kubectl apply -f $folder_name/wordpress-service.yaml
+kubectl apply -f $folder_name/ingress.yaml
